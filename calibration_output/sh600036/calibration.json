@@ -1,0 +1,21 @@
+{
+  "symbol": "600036",
+  "name": "招商银行",
+  "sec_id": "sh600036",
+  "model": "NeoQuasar/Kronos-base",
+  "tokenizer": "NeoQuasar/Kronos-Tokenizer-base",
+  "lookback": 150,
+  "pred_len": 30,
+  "sample_count_calib": 2,
+  "k_return_shrinkage": 0.20190196954112719,
+  "direction_hit_rate": 0.5161290322580645,
+  "n_anchors": 31,
+  "date_range": [
+    "2024-01-02",
+    "2026-07-01"
+  ],
+  "pred_ret_mean": -0.006265757396372036,
+  "act_ret_mean": 0.021554319555828823,
+  "generated_at": "2026-08-25 22:46:47",
+  "method": "walk-forward monthly anchors; k = slope(origin regression) of actual vs predicted 30d return; returns in sample-path space re-anchored to true last close"
+}

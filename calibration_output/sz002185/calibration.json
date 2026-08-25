@@ -1,0 +1,21 @@
+{
+  "symbol": "002185",
+  "name": "华天科技",
+  "sec_id": "sz002185",
+  "model": "NeoQuasar/Kronos-base",
+  "tokenizer": "NeoQuasar/Kronos-Tokenizer-base",
+  "lookback": 150,
+  "pred_len": 30,
+  "sample_count_calib": 2,
+  "k_return_shrinkage": 0.24002630530132738,
+  "direction_hit_rate": 0.6129032258064516,
+  "n_anchors": 31,
+  "date_range": [
+    "2024-01-02",
+    "2026-07-01"
+  ],
+  "pred_ret_mean": -0.04827876762973389,
+  "act_ret_mean": 0.03954443904594611,
+  "generated_at": "2026-08-25 22:42:03",
+  "method": "walk-forward monthly anchors; k = slope(origin regression) of actual vs predicted 30d return; returns in sample-path space re-anchored to true last close"
+}

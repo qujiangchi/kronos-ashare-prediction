@@ -1,0 +1,21 @@
+{
+  "symbol": "600085",
+  "name": "同仁堂",
+  "sec_id": "sh600085",
+  "model": "NeoQuasar/Kronos-base",
+  "tokenizer": "NeoQuasar/Kronos-Tokenizer-base",
+  "lookback": 150,
+  "pred_len": 30,
+  "sample_count_calib": 2,
+  "k_return_shrinkage": 0.0,
+  "direction_hit_rate": 0.25806451612903225,
+  "n_anchors": 31,
+  "date_range": [
+    "2024-01-02",
+    "2026-07-01"
+  ],
+  "pred_ret_mean": 0.09218656122793513,
+  "act_ret_mean": -0.03985229809021115,
+  "generated_at": "2026-08-25 22:34:00",
+  "method": "walk-forward monthly anchors; k = slope(origin regression) of actual vs predicted 30d return; returns in sample-path space re-anchored to true last close"
+}

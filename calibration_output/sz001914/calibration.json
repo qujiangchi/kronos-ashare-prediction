@@ -1,0 +1,21 @@
+{
+  "symbol": "001914",
+  "name": "招商积余",
+  "sec_id": "sz001914",
+  "model": "NeoQuasar/Kronos-base",
+  "tokenizer": "NeoQuasar/Kronos-Tokenizer-base",
+  "lookback": 150,
+  "pred_len": 30,
+  "sample_count_calib": 2,
+  "k_return_shrinkage": 0.12383717152098192,
+  "direction_hit_rate": 0.3870967741935484,
+  "n_anchors": 31,
+  "date_range": [
+    "2024-01-02",
+    "2026-07-01"
+  ],
+  "pred_ret_mean": 0.07707450647049265,
+  "act_ret_mean": -0.01406449935937667,
+  "generated_at": "2026-08-25 22:28:24",
+  "method": "walk-forward monthly anchors; k = slope(origin regression) of actual vs predicted 30d return; returns in sample-path space re-anchored to true last close"
+}

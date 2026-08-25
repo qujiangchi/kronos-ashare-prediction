@@ -1,0 +1,21 @@
+{
+  "symbol": "002439",
+  "name": "启明星辰",
+  "sec_id": "sz002439",
+  "model": "NeoQuasar/Kronos-base",
+  "tokenizer": "NeoQuasar/Kronos-Tokenizer-base",
+  "lookback": 150,
+  "pred_len": 30,
+  "sample_count_calib": 2,
+  "k_return_shrinkage": 0.1475765695280165,
+  "direction_hit_rate": 0.5161290322580645,
+  "n_anchors": 31,
+  "date_range": [
+    "2024-01-02",
+    "2026-07-01"
+  ],
+  "pred_ret_mean": 0.09917846051883855,
+  "act_ret_mean": -0.022785388915898423,
+  "generated_at": "2026-08-25 22:35:59",
+  "method": "walk-forward monthly anchors; k = slope(origin regression) of actual vs predicted 30d return; returns in sample-path space re-anchored to true last close"
+}

@@ -1,0 +1,21 @@
+{
+  "symbol": "603289",
+  "name": "泰瑞机器",
+  "sec_id": "sh603289",
+  "model": "NeoQuasar/Kronos-base",
+  "tokenizer": "NeoQuasar/Kronos-Tokenizer-base",
+  "lookback": 150,
+  "pred_len": 30,
+  "sample_count_calib": 2,
+  "k_return_shrinkage": 0.3808685397411633,
+  "direction_hit_rate": 0.5483870967741935,
+  "n_anchors": 31,
+  "date_range": [
+    "2024-01-02",
+    "2026-07-01"
+  ],
+  "pred_ret_mean": 0.012788508563717637,
+  "act_ret_mean": -0.002237399315604584,
+  "generated_at": "2026-08-25 22:40:03",
+  "method": "walk-forward monthly anchors; k = slope(origin regression) of actual vs predicted 30d return; returns in sample-path space re-anchored to true last close"
+}

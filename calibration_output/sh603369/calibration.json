@@ -1,0 +1,21 @@
+{
+  "symbol": "603369",
+  "name": "今世缘",
+  "sec_id": "sh603369",
+  "model": "NeoQuasar/Kronos-base",
+  "tokenizer": "NeoQuasar/Kronos-Tokenizer-base",
+  "lookback": 150,
+  "pred_len": 30,
+  "sample_count_calib": 2,
+  "k_return_shrinkage": 0.18561266587202968,
+  "direction_hit_rate": 0.4838709677419355,
+  "n_anchors": 31,
+  "date_range": [
+    "2024-01-02",
+    "2026-07-01"
+  ],
+  "pred_ret_mean": 0.12375251691803722,
+  "act_ret_mean": -0.018516730527354423,
+  "generated_at": "2026-08-25 22:30:15",
+  "method": "walk-forward monthly anchors; k = slope(origin regression) of actual vs predicted 30d return; returns in sample-path space re-anchored to true last close"
+}

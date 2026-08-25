@@ -1,0 +1,21 @@
+{
+  "symbol": "001222",
+  "name": "源飞宠物",
+  "sec_id": "sz001222",
+  "model": "NeoQuasar/Kronos-base",
+  "tokenizer": "NeoQuasar/Kronos-Tokenizer-base",
+  "lookback": 150,
+  "pred_len": 30,
+  "sample_count_calib": 2,
+  "k_return_shrinkage": 0.0,
+  "direction_hit_rate": 0.41935483870967744,
+  "n_anchors": 31,
+  "date_range": [
+    "2024-01-02",
+    "2026-07-01"
+  ],
+  "pred_ret_mean": 0.014480268527966413,
+  "act_ret_mean": 0.0011202482416938237,
+  "generated_at": "2026-08-25 22:32:09",
+  "method": "walk-forward monthly anchors; k = slope(origin regression) of actual vs predicted 30d return; returns in sample-path space re-anchored to true last close"
+}

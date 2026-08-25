@@ -1,0 +1,21 @@
+{
+  "symbol": "000425",
+  "name": "徐工机械",
+  "sec_id": "sz000425",
+  "model": "NeoQuasar/Kronos-base",
+  "tokenizer": "NeoQuasar/Kronos-Tokenizer-base",
+  "lookback": 150,
+  "pred_len": 30,
+  "sample_count_calib": 2,
+  "k_return_shrinkage": 0.06912538531502724,
+  "direction_hit_rate": 0.6129032258064516,
+  "n_anchors": 31,
+  "date_range": [
+    "2024-01-02",
+    "2026-07-01"
+  ],
+  "pred_ret_mean": -0.04510144426193418,
+  "act_ret_mean": 0.0162466866265454,
+  "generated_at": "2026-08-25 22:38:03",
+  "method": "walk-forward monthly anchors; k = slope(origin regression) of actual vs predicted 30d return; returns in sample-path space re-anchored to true last close"
+}
