@@ -1,0 +1,169 @@
+# 港股科技ETF银华 (513160.SH) Kronos 实测脚本
+# 数据：akshare 真实日线（前复权）；模型：Kronos-small（CPU）。
+# 基于 predict_xugong.py，仅改标的代码/名称/市场前缀/输出目录。
+
+import sys
+import os
+from datetime import datetime, timedelta
+
+import pandas as pd
+import matplotlib
+matplotlib.use("Agg")  # 无界面环境，直接存图
+import matplotlib.pyplot as plt
+
+import akshare as ak
+import requests
+
+# 让脚本能 import 项目内的 model 包
+HERE = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(HERE)
+from model import Kronos, KronosTokenizer, KronosPredictor
+
+# ---- 配置 ----
+STOCK_CODE = "513160"
+STOCK_NAME = "港股科技ETF银华"
+MARKET_PREFIX = "sh"                          # 上交所 ETF
+START_DATE = "20230101"                       # 拉取起点，数据越多回看越稳
+END_DATE = datetime.now().strftime("%Y%m%d")  # 拉到今天
+LOOKBACK = 400                                # 输入历史根数（<=512 上下文）
+PRED_LEN = 100                                # 预测未来交易日数
+MODEL_NAME = "NeoQuasar/Kronos-small"         # 已缓存；可换 Kronos-base 提精度
+TOKENIZER_NAME = "NeoQuasar/Kronos-Tokenizer-base"
+DEVICE = "cpu"
+OUT_DIR = os.path.join(HERE, "513160_output")
+os.makedirs(OUT_DIR, exist_ok=True)
+
+
+def fetch_data():
+    print(f"[1/4] 拉取 {STOCK_NAME}({STOCK_CODE}) 日线 {START_DATE}~{END_DATE} ...")
+    # 腾讯财经行情接口（用户环境已连腾讯自选股，腾讯域名可达）。
+    # 注：新浪源不支持基金代码；东方财富源本环境被远端重置；故走腾讯。
+    # 腾讯 day 行格式：日期,开,收,高,低,量（不含成交额，amount 填 0）。
+    sec = MARKET_PREFIX + STOCK_CODE
+    url = "https://web.ifzq.gtimg.cn/appstock/app/fqkline/get"
+    sd = f"{START_DATE[:4]}-{START_DATE[4:6]}-{START_DATE[6:]}"
+    ed = f"{END_DATE[:4]}-{END_DATE[4:6]}-{END_DATE[6:]}"
+    params = {"param": f"{sec},day,{sd},{ed},1024,qfq"}
+    headers = {"User-Agent": "Mozilla/5.0"}
+
+    df, last_err = None, None
+    for attempt in range(3):
+        try:
+            r = requests.get(url, params=params, headers=headers, timeout=20)
+            j = r.json()
+            data = j.get("data")
+            rows = None
+            if isinstance(data, list):
+                rows = data
+            elif isinstance(data, dict):
+                node = data.get(sec)
+                if isinstance(node, list):
+                    rows = node
+                elif isinstance(node, dict):
+                    key = "qfqday" if "qfqday" in node else ("day" if "day" in node else None)
+                    if key:
+                        rows = node[key]
+            if not rows:
+                raise ValueError(f"空数据: {j.get('msg', j)}")
+            rows = [r[:6] for r in rows]  # 仅取前 6 个字段
+            df = pd.DataFrame(rows, columns=["timestamps", "open", "close", "high", "low", "volume"])
+            for col in ["open", "high", "low", "close", "volume"]:
+                df[col] = pd.to_numeric(df[col], errors="coerce").fillna(0.0)
+            df["amount"] = 0.0  # 腾讯 day 接口不含成交额，填 0
+            df["timestamps"] = pd.to_datetime(df["timestamps"])
+            df = df.sort_values("timestamps").reset_index(drop=True)
+            if not df.empty:
+                break
+        except Exception as e:
+            last_err = e
+            print(f"      ⚠ 第 {attempt + 1} 次重试: {type(e).__name__}: {str(e)[:80]}")
+    if df is None or df.empty:
+        raise RuntimeError(f"无法获取行情: {last_err}")
+
+    print(f"      ✅ 共 {len(df)} 条，区间 {df['timestamps'].min().date()} ~ {df['timestamps'].max().date()}")
+    print(f"      最新收盘: {df['close'].iloc[-1]:.3f} 元")
+    return df
+
+
+def build_future_dates(last_date, n):
+    """生成未来 n 个自然交易日（跳过周末，粗略，不查真实休市）"""
+    future, d = [], last_date + timedelta(days=1)
+    while len(future) < n:
+        if d.weekday() < 5:
+            future.append(d)
+        d += timedelta(days=1)
+    return future
+
+
+def main():
+    df = fetch_data()
+
+    print(f"[2/4] 加载模型 {MODEL_NAME} (device={DEVICE}) ...")
+    tokenizer = KronosTokenizer.from_pretrained(TOKENIZER_NAME)
+    model = Kronos.from_pretrained(MODEL_NAME)
+    predictor = KronosPredictor(model, tokenizer, device=DEVICE, max_context=512)
+
+    print(f"[3/4] 预测未来 {PRED_LEN} 个交易日 (lookback={LOOKBACK}) ...")
+    x_df = df.loc[-LOOKBACK:, ["open", "high", "low", "close", "volume", "amount"]].reset_index(drop=True)
+    x_ts = df.loc[-LOOKBACK:, "timestamps"].reset_index(drop=True)
+    future = build_future_dates(df["timestamps"].iloc[-1], PRED_LEN)
+    y_ts = pd.Series(future)
+
+    pred_df = predictor.predict(
+        df=x_df, x_timestamp=x_ts, y_timestamp=y_ts, pred_len=PRED_LEN,
+        T=1.2, top_p=0.95, sample_count=3, verbose=True,
+    )
+    pred_df = pred_df.iloc[:len(future)]
+    pred_df.index = future
+
+    # ---- 报告 ----
+    hist_close = df["close"].iloc[-1]
+    pred_close = pred_df["close"].iloc[-1]
+    chg = (pred_close / hist_close - 1) * 100
+    print(f"\n[4/4] 生成图表与报告 ...")
+    print(f"      当前价 {hist_close:.3f} -> 预测期末 {pred_close:.3f}  ({chg:+.2f}%)")
+    print(f"      预测区间最高 {pred_df['close'].max():.3f} / 最低 {pred_df['close'].min():.3f}")
+
+    # 保存预测 CSV
+    rep = pd.DataFrame({
+        "日期": [d.strftime("%Y-%m-%d") for d in future],
+        "预测开盘": pred_df["open"].values,
+        "预测最高": pred_df["high"].values,
+        "预测最低": pred_df["low"].values,
+        "预测收盘": pred_df["close"].values,
+        "预测成交量": pred_df["volume"].values,
+        "预测成交额": pred_df["amount"].values,
+        "较当前涨跌幅(%)": ((pred_df["close"].values / hist_close - 1) * 100),
+    })
+    csv_path = os.path.join(OUT_DIR, f"{STOCK_CODE}_prediction.csv")
+    rep.to_csv(csv_path, index=False, encoding="utf-8-sig")
+    print(f"      💾 CSV: {csv_path}")
+
+    # 绘图
+    plt.rcParams["font.sans-serif"] = ["SimHei", "Microsoft YaHei", "Arial"]
+    plt.rcParams["axes.unicode_minus"] = False
+    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(15, 10))
+
+    hist_plot = df.set_index("timestamps")["close"].iloc[-min(250, len(df)):]
+    ax1.plot(hist_plot.index, hist_plot.values, label="历史收盘", color="#185FA5", lw=1.8)
+    ax1.plot(pred_df.index, pred_df["close"].values, label="Kronos 预测", color="#BA7517", lw=1.8, marker="o", ms=2)
+    ax1.axvline(x=pred_df.index[0], color="red", ls="--", alpha=0.6)
+    ax1.set_title(f"{STOCK_NAME}({STOCK_CODE}) Kronos 预测  当前 {hist_close:.3f} -> 期末 {pred_close:.3f} ({chg:+.2f}%)")
+    ax1.set_ylabel("收盘价 (元)")
+    ax1.legend(); ax1.grid(alpha=0.3)
+
+    ax2.bar(pred_df.index, (pred_df["close"].values / hist_close - 1) * 100, color="#BA7517", alpha=0.8)
+    ax2.axhline(0, color="black", lw=1)
+    ax2.set_title("逐日预测涨跌幅 (%)")
+    ax2.set_ylabel("涨跌幅 (%)")
+    ax2.grid(alpha=0.3)
+
+    plt.tight_layout()
+    png_path = os.path.join(OUT_DIR, f"{STOCK_CODE}_prediction.png")
+    plt.savefig(png_path, dpi=150, bbox_inches="tight")
+    print(f"      📊 图: {png_path}")
+    print("513160 实测完成 ✅")
+
+
+if __name__ == "__main__":
+    main()
