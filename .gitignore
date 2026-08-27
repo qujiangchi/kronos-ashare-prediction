@@ -77,6 +77,7 @@ tmp/
 
 # ===== 本项目生成产物（由脚本重新生成，不入库） =====
 daily_output/
+daily_output_v2/
 xugong_output/
 513160_output/
 xugong_v2_output/
